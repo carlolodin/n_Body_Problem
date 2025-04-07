@@ -1,22 +1,21 @@
-% Simulazione del problema degli n corpi in 3D con velocity Verlet
+% Simulazione del problema degli n corpi
 clear; clc; close all;
 
 %% Parametri
-n = 10;                      % Numero di corpi
+n = 4;                      % Numero di corpi
 G = 1;                      % Costante gravitazionale (normalizzata)
 T = 20;                     % Tempo totale della simulazione
 dt = 0.01;                  % Passo temporale
 steps = floor(T/dt);        % Numero di passi
+sun_mass = 1;               % Massa del sole
 
-cm_pos = zeros(steps, 3);
-cm_vel = zeros(steps, 3);
-L = zeros(steps, 1);        % Modulo del momento angolare totale
-v_cm_mag = zeros(steps, 1); % Modulo velocità centro di massa
-pos_hist = zeros(n,3,steps);
-energy = zeros(steps,1);
-
-
-mass = [1; ones(n-1, 1)];
+cm_pos = zeros(steps, 3);           % Matrice delle posizioni del cantro di massa
+cm_vel = zeros(steps, 3);           % matrice delle velocità del centro di massa
+v_cm_mag = zeros(steps, 1);         % Array dei moduli velocità centro di massa
+L = zeros(steps, 1);                % Array dei moduli del momento angolare totale
+pos_hist = zeros(n,3,steps);        % Tensore delle posizioni
+energy = zeros(steps,1);            % Array dell'energia totale ad ogni step
+mass = [sun_mass; ones(n-1, 1)];    % Array delle masse
 
 % Corpo centrale al centro
 pos = zeros(n,3);
@@ -27,7 +26,7 @@ radii = linspace(2, 5, n-1)';
 phi = rand(n-1,1) * 2*pi;         % angolo longitudinale
 theta = acos(2*rand(n-1,1) - 1);  % angolo latitudinale (uniforme sulla sfera)
 
-% Conversione coordinate sferiche → cartesiane
+% Conversione coordinate sferiche - cartesiane
 pos(2:end,1) = radii .* sin(theta) .* cos(phi);
 pos(2:end,2) = radii .* sin(theta) .* sin(phi);
 pos(2:end,3) = radii .* cos(theta);
@@ -58,14 +57,13 @@ vel(1,:) = [0 0 0];
 %% Calcolo simulazione
 acc = compute_accelerations(pos, mass, G);
 for t = 1:steps
-    % Choose a numerical method
+    % Scegli un metodo di integrazione
     [pos, vel, acc] = runge_kutta_four(pos, vel, dt, mass, G);
     %[pos, vel, acc] = verlet(pos, vel, acc, dt, mass, G); % USARE DT = 0.05
     %[pos, vel, acc] = symplectic_euler(pos, vel, dt, mass, G);
     %[pos, vel, acc] = explicit_euler(pos, vel, dt, mass, G);
 
-    % Salva posizione
-    pos_hist(:,:,t) = pos;
+    pos_hist(:,:,t) = pos;     % Salva posizione
     
     % Calcola energia totale
     KE = 0.5 * sum(mass .* sum(vel.^2, 2));
@@ -82,8 +80,7 @@ for t = 1:steps
     cm_pos(t,:) = sum(mass .* pos) / sum(mass);
     cm_vel(t,:) = sum(mass .* vel) / sum(mass);
 
-    % Modulo velocità CM
-    v_cm_mag(t) = norm(cm_vel(t,:));
+    v_cm_mag(t) = norm(cm_vel(t,:));     % Modulo velocità CM
 
     % Momento angolare totale
     L_vec = zeros(1,3);
@@ -141,7 +138,7 @@ ylim([lims(1,2), lims(2,2)]);
 zlim([lims(1,3), lims(2,3)]);
 axis manual;
 
-% Tracce (che si allungano) e punti
+% Tracce che si allungano e punti
 trails = gobjects(n,1);
 points = gobjects(n,1);
 for i = 1:n
@@ -162,38 +159,21 @@ cm_quiver = quiver3(NaN, NaN, NaN, NaN, NaN, NaN, 0, 'Color', [1 0.5 0], 'LineWi
 for t = 1:steps
     for i = 1:n
         % Aggiorna traiettoria progressiva
-        set(trails(i), ...
-            'XData', squeeze(pos_hist(i,1,1:t)), ...
-            'YData', squeeze(pos_hist(i,2,1:t)), ...
-            'ZData', squeeze(pos_hist(i,3,1:t)));
+        set(trails(i), 'XData', squeeze(pos_hist(i,1,1:t)), 'YData', squeeze(pos_hist(i,2,1:t)), 'ZData', squeeze(pos_hist(i,3,1:t)));
 
         % Aggiorna punto
-        set(points(i), ...
-            'XData', pos_hist(i,1,t), ...
-            'YData', pos_hist(i,2,t), ...
-            'ZData', pos_hist(i,3,t));
+        set(points(i), 'XData', pos_hist(i,1,t), 'YData', pos_hist(i,2,t), 'ZData', pos_hist(i,3,t));
     end
 
     % Aggiorna CM
-    set(cm_point, ...
-        'XData', cm_pos(t,1), ...
-        'YData', cm_pos(t,2), ...
-        'ZData', cm_pos(t,3));
+    set(cm_point,'XData', cm_pos(t,1), 'YData', cm_pos(t,2), 'ZData', cm_pos(t,3));
 
     % Traccia CM progressiva
-    set(cm_trail, ...
-        'XData', cm_pos(1:t,1), ...
-        'YData', cm_pos(1:t,2), ...
-        'ZData', cm_pos(1:t,3));
+    set(cm_trail, 'XData', cm_pos(1:t,1), 'YData', cm_pos(1:t,2),'ZData', cm_pos(1:t,3));
 
     % Vettore velocità CM
-    set(cm_quiver, ...
-        'XData', cm_pos(t,1), ...
-        'YData', cm_pos(t,2), ...
-        'ZData', cm_pos(t,3), ...
-        'UData', cm_vel(t,1)*scale, ...
-        'VData', cm_vel(t,2)*scale, ...
-        'WData', cm_vel(t,3)*scale);
+    set(cm_quiver, 'XData', cm_pos(t,1), 'YData', cm_pos(t,2), 'ZData', cm_pos(t,3), ...
+        'UData', cm_vel(t,1)*scale, 'VData', cm_vel(t,2)*scale,'WData', cm_vel(t,3)*scale);
 
     drawnow;
 end

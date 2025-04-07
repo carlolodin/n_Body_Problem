@@ -7,16 +7,16 @@ G = 1;                      % Costante gravitazionale (normalizzata)
 T = 20;                     % Tempo totale della simulazione
 dt = 0.01;                  % Passo temporale
 steps = floor(T/dt);        % Numero di passi
+sun_mass = 1;               % Massa del sole
+epsilon = 1e-4;             % Valore della perturbazione
 
-cm_pos = zeros(steps, 3);
-cm_vel = zeros(steps, 3);
-L = zeros(steps, 1);        % Modulo del momento angolare totale
-v_cm_mag = zeros(steps, 1); % Modulo velocità centro di massa
-pos_hist = zeros(n,3,steps);
-energy = zeros(steps,1);
-
-
-mass = [1; ones(n-1, 1)];
+cm_pos = zeros(steps, 3);           % Matrice delle posizioni del cantro di massa
+cm_vel = zeros(steps, 3);           % matrice delle velocità del centro di massa
+v_cm_mag = zeros(steps, 1);         % Array dei moduli velocità centro di massa
+L = zeros(steps, 1);                % Array dei moduli del momento angolare totale
+pos_hist = zeros(n,3,steps);        % Tensore delle posizioni
+energy = zeros(steps,1);            % Array dell'energia totale ad ogni step
+mass = [sun_mass; ones(n-1, 1)];    % Array delle masse
 
 % Corpo centrale al centro
 pos = zeros(n,3);
@@ -27,7 +27,7 @@ radii = linspace(2, 5, n-1)';
 phi = rand(n-1,1) * 2*pi;         % angolo longitudinale
 theta = acos(2*rand(n-1,1) - 1);  % angolo latitudinale (uniforme sulla sfera)
 
-% Conversione coordinate sferiche → cartesiane
+% Conversione coordinate sferiche - cartesiane
 pos(2:end,1) = radii .* sin(theta) .* cos(phi);
 pos(2:end,2) = radii .* sin(theta) .* sin(phi);
 pos(2:end,3) = radii .* cos(theta);
@@ -56,8 +56,7 @@ vel(1,:) = [0 0 0];
 pos2 = pos;
 vel2 = vel;
 
-% Aggiunta di una piccola perturbazione
-epsilon = 1e-4;
+
 pos2(2:end,:) = pos2(2:end,:) + epsilon * randn(size(pos2(2:end,:)));
 
 
@@ -73,7 +72,7 @@ for t = 1:steps
     % Salva posizione
     pos_hist(:,:,t) = pos;
 
-    % Sistema 2
+    % Sistema perturbato
     [pos2, vel2, acc2] = verlet(pos2, vel2, acc2, dt, mass, G);
     pos_hist2(:,:,t) = pos2;
 
@@ -166,7 +165,7 @@ ylim([lims(1,2), lims(2,2)]);
 zlim([lims(1,3), lims(2,3)]);
 axis manual;
 
-% Tracce (che si allungano) e punti
+% Tracce che si allungano e punti
 trails = gobjects(n,1);
 points = gobjects(n,1);
 trails2 = gobjects(n,1);
@@ -208,9 +207,6 @@ for t = 1:steps
             'YData', pos_hist2(i,2,t), ...
             'ZData', pos_hist2(i,3,t));
     end
-
-    % ... (segue aggiornamento centro di massa come già nel tuo codice)
-
     drawnow;
 end
 

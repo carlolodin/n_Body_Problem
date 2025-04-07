@@ -2,21 +2,20 @@
 clear; clc; close all;
 
 %% Parametri
-n = 5;                      % Numero di corpi
+n = 4;                      % Numero di corpi
 G = 1;                      % Costante gravitazionale (normalizzata)
 T = 20;                     % Tempo totale della simulazione
 dt = 0.01;                  % Passo temporale
 steps = floor(T/dt);        % Numero di passi
+sun_mass = 1;               % Massa del sole
 
-cm_pos = zeros(steps, 3);
-cm_vel = zeros(steps, 3);
-L = zeros(steps, 1);        % Modulo del momento angolare totale
-v_cm_mag = zeros(steps, 1); % Modulo velocità centro di massa
-pos_hist = zeros(n,3,steps);
-energy = zeros(steps,1);
-
-
-mass = [5; ones(n-1, 1)];
+cm_pos = zeros(steps, 3);           % Matrice delle posizioni del cantro di massa
+cm_vel = zeros(steps, 3);           % matrice delle velocità del centro di massa
+v_cm_mag = zeros(steps, 1);         % Array dei moduli velocità centro di massa
+L = zeros(steps, 1);                % Array dei moduli del momento angolare totale
+pos_hist = zeros(n,3,steps);        % Tensore delle posizioni
+energy = zeros(steps,1);            % Array dell'energia totale ad ogni step
+mass = [sun_mass; ones(n-1, 1)];    % Array delle masse
 
 % Corpo centrale al centro
 pos = zeros(n,3);
@@ -27,7 +26,7 @@ radii = linspace(2, 5, n-1)';
 phi = rand(n-1,1) * 2*pi;         % angolo longitudinale
 theta = acos(2*rand(n-1,1) - 1);  % angolo latitudinale (uniforme sulla sfera)
 
-% Conversione coordinate sferiche → cartesiane
+% Conversione coordinate sferiche - cartesiane
 pos(2:end,1) = radii .* sin(theta) .* cos(phi);
 pos(2:end,2) = radii .* sin(theta) .* sin(phi);
 pos(2:end,3) = radii .* cos(theta);
@@ -120,7 +119,7 @@ for m = 1:length(methods)
 end
 
 
-%% Plot energia, momento angolare e velocità del CM
+%% Plot energia
 figure;
 hold on;
 for m = 1:length(methods)
@@ -129,7 +128,7 @@ end
 title('Energia Totale');
 xlabel('Tempo'); ylabel('Energia');
 legend; grid on;
-%% Plot animato in 3D con traiettorie che crescono nel tempo
+%% Plot traiettorie
 
 figure;
 for m = 1:length(methods)
